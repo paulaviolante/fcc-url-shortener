@@ -18,22 +18,28 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-//Almacenamiento temporal en memoria
+// Almacenamiento temporal en memoria
 let urls = []; 
 
 // Endpoint para crear short URL
 app.post('/api/shorturl', (req, res) => {
   const originalUrl = req.body.url; 
+
+  // 🔹 Validar formato antes de usar dns.lookup
+  const urlRegex = /^(http|https):\/\/[^ "]+$/;
+  if (!urlRegex.test(originalUrl)) {
+    return res.json({ error: 'invalid url' });
+  }
+
   try {
     const hostname = urlParser.parse(originalUrl).hostname;
 
-    // Validar que la URL tenga formato y exista el dominio
     dns.lookup(hostname, (err) => {
       if (err) {
         return res.json({ error: 'invalid url' });
       }
 
-      // Gener short_url (id incremental)
+      // Generar short_url (id incremental)
       const shortUrl = urls.length + 1;
 
       urls.push({ original_url: originalUrl, short_url: shortUrl });
@@ -48,8 +54,8 @@ app.post('/api/shorturl', (req, res) => {
   }
 });
 
-//Endpoint para redirigir
-  app.get('/api/shorturl/:short_url', (req, res) => {
+// Endpoint para redirigir
+app.get('/api/shorturl/:short_url', (req, res) => {
   const short = parseInt(req.params.short_url);
   const found = urls.find((u) => u.short_url === short);
 
